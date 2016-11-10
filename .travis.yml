@@ -1,6 +1,6 @@
 language: node
 rvm:
-- 6.1
+  - 6.1
 before_script: gem install -g serverless@1.0.3
 script:
   - "cd server && sls deploy -s dockyard -r us-east-1 --noDeploy"
@@ -8,6 +8,7 @@ script:
   - "cp one-click.cloudformation.yml out/${TRAVIS_TAG:="build"}-cf.yml"
   - "cp server/.serverless/dockyard.zip out/${TRAVIS_TAG:="build"}.zip"
 deploy:
+
   - provider: s3
     bucket: us-east-1.dockyard
     skip_cleanup: true
@@ -16,67 +17,62 @@ deploy:
     region: us-east-1
     on:
       tags: true
-    secret_access_key:
-      secure:
-    access_key_id:
-      secure:
+    secret_access_key: &secret_key
+      secure: "r8uEUJEbMC2LuLtqr7qLIklfnFvOxelrCJZurfzaNzq47HpsAf/PiiJ4HFj7jyOWvCY/S4JNpnKY9JLq9B0pb7fox4V027UuBhgx9S437H1KueHSo9jNxG5qJ+469HwdmJOeiVkDbS//kTT61rvNdGz3jL//1/371jzQT/lw3VpPxA/yDZK52useVKTEK6W0P9j80CdQ/n3pZN61KBhmVaPk8U58em4oLpLmE7235WBXkQqbcbJPqx8FffAOgoVaaJIxDegrl3ZkIDqSlxtvz/iXHVV7jHw5pztVUtsxBfxvAF1SJjtwREj3JPH7ylu9OxGwvi90s7FXmIXkHA1xFhg2AasPNdbniP+1yLnxsZQGmj+p2ZXQ7HiBx0SRgtuarfj4ienfcdojdTOlI+kYpo3HszcIN5vh/5wdhwNbYF9CG7UWqTvImTS4hXz4fddsPRKuxoqP2lbcp7pCNUyKZYZKdc9R+jlfcKtT5KqCfY1LKtAwM6ws/HG1QvUJ+GwlW5PmOHDLyEXMa0MT39fXjt8t55cQBhBJsW50WZzHNPrUgX3QeCz98M+XfJAfHZJqBlzjq5vsxEhyWip4fcuvWuNY5xQPlhgerFI6uvU/4aTFs/njqoNkh13MTJ8CwNnCfPjm5vmEu0hqYaVBO5Kh546mDZ4kjE5OK1D+3ePJj9c="
+    access_key_id: &access_key
+      secure: "Z5fvGii5C/8yG5X3hmYhOcInIQiLJj4319xvDsR/R+TfccX1f98NajGOllGRyI/vzYrBeuQ1YfOss8+1EnOCXE4EQfLLQOqdxqdOfUxiqWbJA0/LO9dMJoFU8yufAXyCxXjNJmdI8LmWWWgaql8uqkqNUyMumSsrwpBIf9vCddRcs4RwJ3fIE2/VB8EncJNyLVJriuRS0NfoMIdqOqSLmA6KHZ5spoN6ALNoPANZh/lR41v/0ft+YKF4c4egrVVxcJVnr3F+g3+ihIKkXLDCXnaOvCNkRBjWGVKqAQIGct0gh7w+waDc2uoXJLxoJvpZsxn6XZBntF45fhC8pBqYIAQdy2Gn68vfxDAYPcLOKxmIw9U6KqzUS6epsBNNHrDy14B5bFETs5+u+Dg5hqKMSGq8ny0G82EZZhQnZ8UG+ZhEnW70bWMKBp4t12npxDSD2fEyrduktvoJ6O8dZc6eENZBRsTANrG3j+bC4IxDWFujN1W+pYWTLqYIPBV0ULOJQNBInfNHGYsda3PA0JEBu46rTDthgBLSf2Wfn2oxNxNSoTSciHULft4BMgo1LNWL9y/vdi8hm/69FnE0ipVvgDy/9+kMkEFFGrf9OOkhNhIe+CWa8vkx5ZmiwUuz95bzxRe76JtyZ7cQLLYnmzItZD5bhH8CmaZACvUBkpC/7b8="
+
   - provider: s3
     bucket: us-east-2.dockyard
     skip_cleanup: true
     local-dir: out
     edge: true
-    region: us-east-1
+    region: us-east-2
     on:
       tags: true
-    secret_access_key:
-      secure:
-    access_key_id:
-      secure:
+    secret_access_key: *secret_key
+    access_key_id: *access_key
+
   - provider: s3
     bucket: us-west-1.dockyard
     skip_cleanup: true
     local-dir: out
     edge: true
-    region: us-east-1
+    region: us-west-1
     on:
       tags: true
-    secret_access_key:
-      secure:
-    access_key_id:
-      secure:
+    secret_access_key: *secret_key
+    access_key_id: *access_key
+
   - provider: s3
     bucket: us-west-2.dockyard
     skip_cleanup: true
     local-dir: out
     edge: true
-    region: us-east-1
+    region: us-west-2
     on:
       tags: true
-    secret_access_key:
-      secure:
-    access_key_id:
-      secure:
+    secret_access_key: *secret_key
+    access_key_id: *access_key
+
   - provider: s3
     bucket: eu-central-1.dockyard
     skip_cleanup: true
     local-dir: out
     edge: true
-    region: us-east-1
+    region: eu-central-1
     on:
       tags: true
-    secret_access_key:
-      secure:
-    access_key_id:
-      secure:
+    secret_access_key: *secret_key
+    access_key_id: *access_key
+
   - provider: s3
     bucket: eu-west-1.dockyard
     skip_cleanup: true
     local-dir: out
     edge: true
-    region: us-east-1
+    region: eu-west-1
     on:
       tags: true
-    secret_access_key:
-      secure:
-    access_key_id:
-      secure:
+    secret_access_key: *secret_key
+    access_key_id: *access_key
