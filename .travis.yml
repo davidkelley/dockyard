@@ -3,7 +3,9 @@ node_js:
   - 6.1
 before_script: npm install -g serverless@1.0.3
 script:
-  - "cd server && sls deploy -s dockyard -r us-east-1 --noDeploy"
+  - "cd server"
+  - "npm install"
+  - "sls deploy -s dockyard -r us-east-1 --noDeploy"
   - "mkdir out"
   - "cp one-click.cloudformation.yml out/${TRAVIS_TAG:='build'}-cf.yml"
   - "cp server/.serverless/dockyard.zip out/${TRAVIS_TAG:='build'}.zip"
