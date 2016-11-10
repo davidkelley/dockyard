@@ -17,7 +17,7 @@ Once the stack has been created, you can either manually create pipelines for yo
 
 If the stack has been correctly configured and setup, you should see Dockyard appear as a build action inside the CodePipeline console, as depicted below.
 
-![Dockyard in CodePipeline](https://github.com/davidkelley/dockyard/raw/master/.github/images/pipeline.png)
+![Dockyard in CodePipeline](https://github.com/davidkelley/dockyard/raw/master/.github/pipeline.png)
 
 ---
 
