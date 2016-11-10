@@ -46,10 +46,6 @@
     "extends": "airbnb"
   },
   "scripts": {
-    "eslint": "eslint events functions pages test handler.js webpack.config.js",
-    "test:api": "mocha test/**/*.js --compilers js:babel-register",
-    "test:api:watch": "npm run test:api -- --reporter min --watch",
-    "test:functions": "mocha functions/**/*.test.js --compilers js:babel-register",
-    "test:functions:watch": "npm run test:functions -- --reporter min --watch"
+    "eslint": "eslint events functions pages test handler.js webpack.config.js"
   }
 }
