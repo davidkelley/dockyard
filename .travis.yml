@@ -6,10 +6,10 @@ env:
   # - AWS_ACCESS_KEY_ID=fo0 AWS_SECRET_ACCESS_KEY=b4r AWS_REGION=us-east-1
 before_script: npm install -g serverless@1.0.2
 script:
-  - "cd server"
+  - "cd server && npm install"
   - "npm install"
   - "sls deploy -s dockyard --noDeploy"
-  - "mkdir out"
+  - "cd .. && mkdir out"
   - "cp one-click.cloudformation.yml out/${TRAVIS_TAG:='build'}-cf.yml"
   - "cp server/.serverless/dockyard.zip out/${TRAVIS_TAG:='build'}.zip"
 deploy:
