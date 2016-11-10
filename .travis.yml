@@ -3,8 +3,8 @@ node_js:
   - 6.1
 env:
   # stub AWS for broken --noDeploy
-  - AWS_ACCESS_KEY_ID=fo0 AWS_SECRET_ACCESS_KEY=b4r AWS_REGION=us-east-1
-before_script: npm install -g serverless@1.0.3
+  # - AWS_ACCESS_KEY_ID=fo0 AWS_SECRET_ACCESS_KEY=b4r AWS_REGION=us-east-1
+before_script: npm install -g serverless@1.0.2
 script:
   - "cd server"
   - "npm install"
