@@ -7,11 +7,11 @@ env:
 before_script: npm install -g serverless@1.0.2
 script:
   - "cd server && npm install"
-  - "npm install"
   - "sls deploy -s dockyard --noDeploy"
   - "cd .. && mkdir out"
-  - "cp one-click.cloudformation.yml out/${TRAVIS_TAG:='build'}-cf.yml"
-  - "cp server/.serverless/dockyard.zip out/${TRAVIS_TAG:='build'}.zip"
+  - "sed -i -e "s/\__VERSION__/${TRAVIS_TAG-$TRAVIS_BRANCH}/g" one-click.cloudformation.yml"
+  - "cp one-click.cloudformation.yml out/${TRAVIS_TAG-$TRAVIS_BRANCH}-cf.yml"
+  - "cp server/.serverless/dockyard.zip out/${TRAVIS_TAG-$TRAVIS_BRANCH}.zip"
 deploy:
 
   - provider: s3

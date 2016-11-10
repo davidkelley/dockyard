@@ -23,7 +23,7 @@
 
     Version:
       Type: String
-      Default: "v0-0-2"
+      Default: "__VERSION__"
       Description: "Version of Dockyard to deploy from the source bucket"
 
     InstanceType:
