@@ -1,7 +1,7 @@
 language: node_js
 node_js:
   - 6.1
-before_script: gem install -g serverless@1.0.3
+before_script: npm install -g serverless@1.0.3
 script:
   - "cd server && sls deploy -s dockyard -r us-east-1 --noDeploy"
   - "mkdir out"
