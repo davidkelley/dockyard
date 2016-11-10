@@ -5,8 +5,8 @@ before_script: gem install -g serverless@1.0.3
 script:
   - "cd server && sls deploy -s dockyard -r us-east-1 --noDeploy"
   - "mkdir out"
-  - "cp one-click.cloudformation.yml out/${TRAVIS_TAG:="build"}-cf.yml"
-  - "cp server/.serverless/dockyard.zip out/${TRAVIS_TAG:="build"}.zip"
+  - "cp one-click.cloudformation.yml out/${TRAVIS_TAG:='build'}-cf.yml"
+  - "cp server/.serverless/dockyard.zip out/${TRAVIS_TAG:='build'}.zip"
 deploy:
 
   - provider: s3
