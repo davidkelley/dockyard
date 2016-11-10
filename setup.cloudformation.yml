@@ -1,0 +1,334 @@
+---
+
+  AWSTemplateFormatVersion: "2010-09-09"
+
+  Description: "Creates a flexibly configured SSM Document and Worker to run commands on"
+
+  Parameters:
+
+    Identifier:
+      Type: String
+      Default: Dockyard
+
+    PipelineVersion:
+      Type: String
+      Default: "v0-0-2"
+
+    InstanceType:
+      Type: String
+      Default: t2.micro
+
+    ImageId:
+      Type: "AWS::EC2::Image::Id"
+      Default: "ami-b73b63a0"
+
+    InitialCapacity:
+      Type: String
+      Default: "1"
+
+    ScaleUpAt:
+      Type: String
+      Default: "0 6 * * *"
+
+    ScaleDownAt:
+      Type: String
+      Default: "0 18 * * *"
+
+    DefaultWorkingDirectory:
+      Type: String
+      Default: "/.build"
+
+    DefaultExecutionTimeout:
+      Type: String
+      Default: "3600"
+
+  Metadata:
+    AWS::CloudFormation::Interface:
+      ParameterGroups:
+        - Label:
+            default: "AWS Configuration"
+          Parameters:
+            - Identifier
+            - InitialCapacity
+            - ScaleUpAt
+            - ScaleDownAt
+            - PipelineVersion
+        - Label:
+            default: "Worker Configuration"
+          Parameters:
+            - InstanceType
+            - ImageId
+        - Label:
+            default: "Default Build Configuration"
+          Parameters:
+            - DefaultWorkingDirectory
+            - DefaultExecutionTimeout
+      ParameterLabels:
+        InstanceType:
+          default: "Which Instance Type should the worker run on?"
+        ImageId:
+          default: "The Amazon Linux AMI ID the Instance should use"
+        DefaultWorkingDirectory:
+          default: "Default working directory for builds"
+        DefaultExecutionTimeout:
+          default: "Time in seconds a build can take to execute"
+        Identifier:
+          default: "An arbitrary identifier for the project"
+        PipelineVersion:
+          default: "The version number of the pipeline"
+        ScaleUpAt:
+          default: "Cron expression representing when to add build workers"
+        ScaleDownAt:
+          default: "Cron expression representing when to remove build workers"
+        InitialCapacity:
+          default: "Desired initial daily capacity of build workers"
+
+  Resources:
+
+    YardBuildAction:
+      Type: "AWS::CodePipeline::CustomActionType"
+      Properties:
+        Category: "Build"
+        Provider: !Ref Identifier
+        Version: !Ref PipelineVersion
+        ConfigurationProperties:
+          - Name: image
+            Description: "The resulting name of the docker image"
+            Type: String
+            Key: true
+            Required: true
+            Secret: false
+        InputArtifactDetails:
+          MaximumCount: "1"
+          MinimumCount: "1"
+        OutputArtifactDetails:
+          MaximumCount: "1"
+          MinimumCount: "1"
+
+    YardCommand:
+      Type: "AWS::SSM::Document"
+      Properties:
+        Content:
+          schemaVersion: "1.2"
+          description: "Run an arbitrary Shell Script"
+          parameters:
+            image:
+              type: String
+              description: "The name of the image"
+            revision:
+              type: String
+              description: "Unique Artifact revision numer (or unique string)"
+            artifact:
+              type: String
+              description: "Path to .zip Input Artifact on S3"
+            region:
+              type: String
+              description: "(Optional) The AWS Region to push containers to"
+              default: !Ref AWS::Region
+            accountId:
+              type: String
+              description: "(Optional) The AWS Account ID to push containers to"
+              default: !Ref AWS::AccountId
+            cwd:
+              type: String
+              default: !Ref DefaultWorkingDirectory
+              description: "(Optional) Path to Working Directory"
+          runtimeConfig:
+            aws:runShellScript:
+              properties:
+                - id: "0.aws:runShellScript"
+                  workingDirectory: "{{ cwd }}"
+                  runCommand:
+                    - "aws s3 cp s3://{{ artifact }} {{ revision }}.zip"
+                    - "unzip {{ revision }}.zip -d {{ revision }}"
+                    - "cd {{ revision }}"
+                    - "`aws ecr get-login --region {{ region }}`"
+                    - "docker build --no-cache --rm -t {{ accountId }}.dkr.ecr.{{ region }}.amazonaws.com/{{ image }}:{{ revision }} ."
+                    - "docker push {{ accountId }}.dkr.ecr.{{ region }}.amazonaws.com/{{ image }}:{{ revision }}"
+                    - "docker rmi {{ accountId }}.dkr.ecr.{{ region }}.amazonaws.com/{{ image }}:{{ revision }}"
+                    - "cd .. && rm -rf {{ revision }} && rm {{ revision }}.zip"
+
+    YardRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action: "sts:AssumeRole"
+              Principal:
+                Service: ec2.amazonaws.com
+        Path: "/"
+        Policies:
+          - PolicyName: YardAllowSSMRestrictedPolicyAccess
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - ecr:*
+                  Resource: "*"
+                - Effect: Allow
+                  Action:
+                    - ssm:CreateAssociation
+                    - ssm:DescribeAssociation
+                    - ssm:GetDocument
+                    - ssm:ListAssociations
+                    - ssm:UpdateAssociationStatus
+                    - ssm:UpdateInstanceInformation
+                  Resource: "*"
+                - Effect: Allow
+                  Action:
+                    - ec2messages:AcknowledgeMessage
+                    - ec2messages:DeleteMessage
+                    - ec2messages:FailMessage
+                    - ec2messages:GetEndpoint
+                    - ec2messages:GetMessages
+                    - ec2messages:SendReply
+                  Resource: "*"
+                - Effect: Allow
+                  Action:
+                    - cloudwatch:PutMetricData
+                  Resource: "*"
+                - Effect: Allow
+                  Action:
+                    - ec2:DescribeInstanceStatus
+                  Resource: "*"
+                - Effect: Allow
+                  Action:
+                    - ds:CreateComputer
+                    - ds:DescribeDirectories
+                  Resource: "*"
+                - Effect: Allow
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:DescribeLogGroups
+                    - logs:DescribeLogStreams
+                    - logs:PutLogEvents
+                  Resource: "*"
+                - Effect: Allow
+                  Action:
+                    - s3:PutObject
+                    - s3:GetObject
+                    - s3:AbortMultipartUpload
+                    - s3:ListMultipartUploadParts
+                    - s3:ListBucketMultipartUploads
+                  Resource: "*"
+
+    YardProfile:
+      Type: "AWS::IAM::InstanceProfile"
+      Properties:
+        Path: /
+        Roles:
+          - !Ref YardRole
+
+    YardGroup:
+      Type: "AWS::AutoScaling::AutoScalingGroup"
+      CreationPolicy:
+        ResourceSignal:
+          Timeout: PT8M
+      UpdatePolicy:
+        AutoScalingRollingUpdate:
+          MaxBatchSize: 1
+          MinInstancesInService: 1
+          WaitOnResourceSignals: true
+          PauseTime: PT8M
+      Properties:
+        AvailabilityZones:
+          Fn::GetAZs: ""
+        TerminationPolicies:
+          - OldestInstance
+        HealthCheckType: EC2
+        HealthCheckGracePeriod: 900
+        LaunchConfigurationName: !Ref YardLaunchConfiguration
+        MinSize: 0
+        MaxSize: 10
+        DesiredCapacity: !Ref InitialCapacity
+        Tags:
+          - Key: Name
+            Value: !Ref Identifier
+            PropagateAtLaunch: "true"
+
+    YardGroupScaleUpScheduledAction:
+      Type: "AWS::AutoScaling::ScheduledAction"
+      Properties:
+        AutoScalingGroupName: !Ref YardGroup
+        DesiredCapacity: !Ref InitialCapacity
+        Recurrence: !Ref ScaleUpAt
+
+    YardGroupScaleDownScheduledAction:
+      Type: "AWS::AutoScaling::ScheduledAction"
+      Properties:
+        AutoScalingGroupName: !Ref YardGroup
+        DesiredCapacity: 0
+        Recurrence: !Ref ScaleDownAt
+
+    YardLaunchConfiguration:
+      Type: "AWS::AutoScaling::LaunchConfiguration"
+      Properties:
+        IamInstanceProfile: !GetAtt YardProfile.Arn
+        ImageId: !Ref ImageId
+        InstanceType: !Ref InstanceType
+        UserData:
+          Fn::Base64:
+            Fn::Join:
+              - "\n"
+              -
+                - "#!/bin/bash"
+                - !Sub "mkdir ${DefaultWorkingDirectory}"
+                - !Sub "cd ${DefaultWorkingDirectory}"
+                - "yum install -y aws-cli docker curl"
+                - !Sub "curl https://amazon-ssm-${AWS::Region}.s3.amazonaws.com/latest/linux_amd64/amazon-ssm-agent.rpm -o amazon-ssm-agent.rpm"
+                - "yum install -y amazon-ssm-agent.rpm"
+                - "rm amazon-ssm-agent.rpm"
+                - "aws configure set s3.signature_version s3v4"
+                - "service docker restart"
+                - !Sub "/opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource YardGroup --region ${AWS::Region}"
+
+    YardNotificationTopicIAMRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action: "sts:AssumeRole"
+              Principal:
+                Service: ssm.amazonaws.com
+        Path: "/"
+        Policies:
+          - PolicyName: YardAllowSSMCommandPolicyAccess
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - sns:Publish
+                  Resource: "*"
+
+  Outputs:
+
+    YardCommand:
+      Description: "ID of the SSM Document"
+      Value: !Ref YardCommand
+      Export:
+        Name: !Sub "${Identifier}Command"
+
+    YardBuildAction:
+      Description: "Exported name of the Codepipeline Action Provider"
+      Value: !Ref Identifier
+      Export:
+        Name: !Sub "${Identifier}Action"
+
+    YardPipelineVersion:
+      Description: "Version of the CodePipeline"
+      Value: !Ref PipelineVersion
+      Export:
+        Name: !Sub "${Identifier}Version"
+
+    YardNotificationTopicIAMRole:
+      Description: "SNS Topic IAM Role for publishing SSM Notifications"
+      Value: !GetAtt YardNotificationTopicIAMRole.Arn
+      Export:
+        Name: !Sub "${Identifier}NotificationTopicIAMRole"

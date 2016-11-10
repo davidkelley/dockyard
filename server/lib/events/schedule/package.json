@@ -1,0 +1,6 @@
+{
+  "name": "schedule",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./schedule.js"
+}

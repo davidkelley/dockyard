@@ -1,0 +1,32 @@
+service: dockyard
+
+provider:
+  name: aws
+  runtime: nodejs4.3
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "cloudformation:*"
+        - "sns:*"
+        - "ssm:*"
+        - "codepipeline:*"
+        - "iam:PassRole"
+      Resource: "*"
+
+plugins:
+  - serverless-webpack
+  - serverless-mocha-plugin
+
+functions:
+
+  poller:
+    handler: handler.poller
+    description: "Polls for '${opt:stage}' build Jobs"
+    events:
+      - schedule: rate(10 minutes)
+
+  update:
+    handler: handler.update
+    description: "Updates statuses for '${opt:stage}' build Jobs"
+    events:
+      - sns: Dockyard-SSM-Topic

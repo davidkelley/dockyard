@@ -1,0 +1,82 @@
+language: node
+rvm:
+- 6.1
+before_script: gem install -g serverless@1.0.3
+script:
+  - "cd server && sls deploy -s dockyard -r us-east-1 --noDeploy"
+  - "mkdir out"
+  - "cp one-click.cloudformation.yml out/${TRAVIS_TAG:="build"}-cf.yml"
+  - "cp server/.serverless/dockyard.zip out/${TRAVIS_TAG:="build"}.zip"
+deploy:
+  - provider: s3
+    bucket: us-east-1.dockyard
+    skip_cleanup: true
+    local-dir: out
+    edge: true
+    region: us-east-1
+    on:
+      tags: true
+    secret_access_key:
+      secure:
+    access_key_id:
+      secure:
+  - provider: s3
+    bucket: us-east-2.dockyard
+    skip_cleanup: true
+    local-dir: out
+    edge: true
+    region: us-east-1
+    on:
+      tags: true
+    secret_access_key:
+      secure:
+    access_key_id:
+      secure:
+  - provider: s3
+    bucket: us-west-1.dockyard
+    skip_cleanup: true
+    local-dir: out
+    edge: true
+    region: us-east-1
+    on:
+      tags: true
+    secret_access_key:
+      secure:
+    access_key_id:
+      secure:
+  - provider: s3
+    bucket: us-west-2.dockyard
+    skip_cleanup: true
+    local-dir: out
+    edge: true
+    region: us-east-1
+    on:
+      tags: true
+    secret_access_key:
+      secure:
+    access_key_id:
+      secure:
+  - provider: s3
+    bucket: eu-central-1.dockyard
+    skip_cleanup: true
+    local-dir: out
+    edge: true
+    region: us-east-1
+    on:
+      tags: true
+    secret_access_key:
+      secure:
+    access_key_id:
+      secure:
+  - provider: s3
+    bucket: eu-west-1.dockyard
+    skip_cleanup: true
+    local-dir: out
+    edge: true
+    region: us-east-1
+    on:
+      tags: true
+    secret_access_key:
+      secure:
+    access_key_id:
+      secure:

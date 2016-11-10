@@ -1,0 +1,6 @@
+{
+  "name": "update",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./update.js"
+}
