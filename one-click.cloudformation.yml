@@ -498,7 +498,7 @@
       Description: "IAM Role for Code Pipelines"
       Value: !Ref YardBuildRole
       Export:
-        Name: !Sub "${Identifer}Role"
+        Name: !Sub "${Identifier}Role"
 
     YardVersion:
       Description: "Version of Dockyard"
