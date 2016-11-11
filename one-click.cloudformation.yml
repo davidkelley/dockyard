@@ -494,11 +494,11 @@
       Export:
         Name: !Sub "${Identifier}Action"
 
-    YardBuildRole:
+    YardBuildRoleArn:
       Description: "IAM Role for Code Pipelines"
-      Value: !Ref YardBuildRole
+      Value: !GetAtt YardBuildRole.Arn
       Export:
-        Name: !Sub "${Identifier}Role"
+        Name: !Sub "${Identifier}RoleArn"
 
     YardVersion:
       Description: "Version of Dockyard"

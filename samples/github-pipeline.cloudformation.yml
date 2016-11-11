@@ -2,7 +2,7 @@
 
   AWSTemplateFormatVersion: "2010-09-09"
 
-  Description: "One-click launcher for Dockyard"
+  Description: "Creates an ECR Respository and Pipeline for a project"
 
   Parameters:
 
@@ -29,6 +29,35 @@
       Default: master
       Description: "Branch to use from the repository."
 
+  Metadata:
+    AWS::CloudFormation::Interface:
+      ParameterGroups:
+        - Label:
+            default: "GitHub Configuration"
+          Parameters:
+            - GitHubToken
+            - GitHubUser
+        - Label:
+            default: "Repository Configuration"
+          Parameters:
+            - Repo
+            - Branch
+        - Label:
+            default: "Dockyard Configuration"
+          Parameters:
+            - Identifier
+      ParameterLabels:
+        GitHubToken:
+          default: "GitHub Personal Access Token"
+        GitHubUser:
+          default: "Username or Organisation Name"
+        Repo:
+          default: "Repository Name"
+        Branch:
+          default: "Branch on Repository"
+        Identifier:
+          default: "Dockyard Version"
+
   Resources:
 
     Repository:
@@ -40,32 +69,19 @@
             -
               - !Ref GitHubUser
               - !Ref Repo
-        RepositoryPolicyText:
-          Version: "2012-10-17"
-          Statement:
-            -
-              Sid: AllowPushPullForAllUsers
-              Effect: Allow
-              Principal:
-                AWS:
-                  Fn::Join:
-                    - ""
-                    -
-                      - "arn:aws:iam::"
-                      - !Ref AWS::AccountId
-                      - ":*"
-              Action:
-                - "ecr:GetDownloadUrlForLayer"
-                - "ecr:BatchGetImage"
-                - "ecr:BatchCheckLayerAvailability"
-                - "ecr:PutImage"
-                - "ecr:InitiateLayerUpload"
-                - "ecr:UploadLayerPart"
-                - "ecr:CompleteLayerUpload"
+
+    PipelineArtifactStore:
+      Type: "AWS::S3::Bucket"
+      Properties:
+        VersioningConfiguration:
+          Status: Enabled
 
     Pipeline:
       Type: "AWS::CodePipeline::Pipeline"
       Properties:
+        ArtifactStore:
+          Location: !Ref PipelineArtifactStore
+          Type: S3
         RoleArn:
           Fn::ImportValue: !Sub "${Identifier}Role"
         Stages:
