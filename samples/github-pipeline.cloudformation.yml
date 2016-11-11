@@ -1,0 +1,144 @@
+---
+
+  AWSTemplateFormatVersion: "2010-09-09"
+
+  Description: "One-click launcher for Dockyard"
+
+  Parameters:
+
+    Identifier:
+      Type: String
+      Default: Dockyard
+      Description: "Unique identifier for Dockyard within the system."
+
+    GitHubToken:
+      Type: String
+      NoEcho: true
+      Description: "A Github OAuth Token with public_repo or repo scope"
+
+    GitHubUser:
+      Type: String
+      Description: "Organisation or Username that the repository belongs to"
+
+    Repo:
+      Type: String
+      Description: "The name of the repository"
+
+    Branch:
+      Type: String
+      Default: master
+      Description: "Branch to use from the repository."
+
+  Resources:
+
+    Repository:
+      Type: "AWS::ECR::Repository"
+      Properties:
+        RepositoryName:
+          Fn::Join:
+            - "/"
+            -
+              - !Ref GitHubUser
+              - !Ref Repo
+        RepositoryPolicyText:
+          Version: "2012-10-17"
+          Statement:
+            -
+              Sid: AllowPushPullForAllUsers
+              Effect: Allow
+              Principal:
+                AWS:
+                  Fn::Join:
+                    - ""
+                    -
+                      - "arn:aws:iam::"
+                      - !Ref AWS::AccountId
+                      - ":*"
+              Action:
+                - "ecr:GetDownloadUrlForLayer"
+                - "ecr:BatchGetImage"
+                - "ecr:BatchCheckLayerAvailability"
+                - "ecr:PutImage"
+                - "ecr:InitiateLayerUpload"
+                - "ecr:UploadLayerPart"
+                - "ecr:CompleteLayerUpload"
+
+    Pipeline:
+      Type: "AWS::CodePipeline::Pipeline"
+      Properties:
+        RoleArn:
+          Fn::ImportValue: !Sub "${Identifier}Role"
+        Stages:
+          - Name: Source
+            Actions:
+              - Name: Source
+                RunOrder: 1
+                ActionTypeId:
+                  Category: Source
+                  Owner: ThirdParty
+                  Version: 1
+                  Provider: GitHub
+                OutputArtifacts:
+                  - Name:
+                      Fn::Join:
+                        - "-"
+                        -
+                          - !Ref Repo
+                          - !Ref Branch
+                Configuration:
+                  Owner: !Ref GitHubUser
+                  Repo: !Ref Repo
+                  Branch: !Ref Branch
+                  OAuthToken: !Ref GitHubToken
+
+          - Name: Build
+            Actions:
+              - Name: Build
+                InputArtifacts:
+                  - Name:
+                      Fn::Join:
+                        - "-"
+                        -
+                          - !Ref Repo
+                          - !Ref Branch
+                ActionTypeId:
+                  Category: Build
+                  Owner: Custom
+                  Version:
+                    Fn::ImportValue: !Sub "${Identifier}Version"
+                  Provider: !Ref Identifier
+                OutputArtifacts:
+                  - Name:
+                      Fn::Join:
+                        - "-"
+                        -
+                          - !Ref Repo
+                          - !Ref Branch
+                          - Output
+                Configuration:
+                  image: !Ref Repository
+
+
+  Outputs:
+
+    Repository:
+      Description: "Name of the ECR Repository"
+      Value: !Ref Repository
+      Export:
+        Name: !Sub "${AWS::StackName}Repository"
+
+    RepositoryImage:
+      Description: "URL to the ECR Repository"
+      Value:
+        Fn::Join:
+          - ""
+          -
+            - !Ref AWS::AccountId
+            - "dkr.ecr."
+            - !Ref AWS::Region
+            - "amazonaws.com/"
+            - !Ref Repository
+            - ":"
+            - !Ref Branch
+      Export:
+        Name: !Sub "${AWS::StackName}RepsitoryImage"

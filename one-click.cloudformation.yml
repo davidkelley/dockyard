@@ -234,6 +234,50 @@
           MaximumCount: "1"
           MinimumCount: "1"
 
+    YardBuildRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action: "sts:AssumeRole"
+              Principal:
+                Service: codepipeline.amazonaws.com
+        Path: "/"
+        Policies:
+          - PolicyName: YardAllowCodePipelineFullAccess
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - "codepipeline:*"
+                    - "iam:ListRoles"
+                    - "iam:PassRole"
+                    - "s3:CreateBucket"
+                    - "s3:GetBucketPolicy"
+                    - "s3:GetObject"
+                    - "s3:ListAllMyBuckets"
+                    - "s3:ListBucket"
+                    - "s3:PutBucketPolicy"
+                    - "codecommit:ListBranches"
+                    - "codecommit:ListRepositories"
+                    - "codedeploy:GetApplication"
+                    - "codedeploy:GetDeploymentGroup"
+                    - "codedeploy:ListApplications"
+                    - "codedeploy:ListDeploymentGroups"
+                    - "elasticbeanstalk:DescribeApplications"
+                    - "elasticbeanstalk:DescribeEnvironments"
+                    - "lambda:GetFunctionConfiguration"
+                    - "lambda:ListFunctions"
+                    - "opsworks:DescribeApps"
+                    - "opsworks:DescribeLayers"
+                    - "opsworks:DescribeStacks"
+                    - "cloudformation:DescribeStacks"
+                    - "cloudformation:ListChangeSets"
+                  Resource: "*"
+
     YardCommand:
       Type: "AWS::SSM::Document"
       Properties:
@@ -449,6 +493,12 @@
       Value: !Ref Identifier
       Export:
         Name: !Sub "${Identifier}Action"
+
+    YardBuildRole:
+      Description: "IAM Role for Code Pipelines"
+      Value: !Ref YardBuildRole
+      Export:
+        Name: !Sub "${Identifer}Role"
 
     YardVersion:
       Description: "Version of Dockyard"
