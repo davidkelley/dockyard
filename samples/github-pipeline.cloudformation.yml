@@ -83,7 +83,7 @@
           Location: !Ref PipelineArtifactStore
           Type: S3
         RoleArn:
-          Fn::ImportValue: !Sub "${Identifier}Role"
+          Fn::ImportValue: !Sub "${Identifier}RoleArn"
         Stages:
           - Name: Source
             Actions:
